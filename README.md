@@ -70,7 +70,7 @@ Open a Pull Request.
 
  Contact
 Built with  by Jahmax1.
-Reach out for collabs or feedback: your-email@example.com (mailto:your-email@example.com).
+Reach out for collabs or feedback:jahmaxsimba@gmail.com(jahmaxsimba@gmail.com).
  Acknowledgments
 Inspired by sci-fi aesthetics and the dream of cosmic financial freedom.
 
