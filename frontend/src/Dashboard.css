@@ -1,170 +1,370 @@
-/* C:\Users\HP\CosmicVault\frontend\src\Dashboard.css */
+/* C:\Users\HP\CosmicVault-New\frontend\src\Dashboard.css */
 .dashboard {
-    min-height: 100vh;
-    position: relative;
-    padding: 1rem;
-  }
-  
-  .stars-background {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: url('https://www.transparenttextures.com/patterns/stardust.png') repeat;
-    opacity: 0.3;
-    z-index: -1;
-  }
-  
-  .dashboard-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1rem 2rem;
-    background: rgba(26, 26, 46, 0.9);
-    border-radius: 12px;
-    margin-bottom: 2rem;
-  }
-  
-  body.light .dashboard-header {
-    background: rgba(255, 255, 255, 0.9);
-  }
-  
-  .dashboard-header h1 {
-    color: #ffd700;
-  }
-  
-  body.light .dashboard-header h1 {
-    color: #333;
-  }
-  
-  .header-actions button {
-    background: none;
-    border: none;
-    color: #fff;
-    font-size: 1.2rem;
-    margin-left: 1rem;
-    cursor: pointer;
-  }
-  
-  body.light .header-actions button {
-    color: #333;
-  }
-  
-  .dashboard-content {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 2rem;
-  }
-  
-  .balances, .referral, .forms, .chart {
-    background: rgba(26, 26, 46, 0.9);
-    border-radius: 12px;
-    padding: 1.5rem;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  }
-  
-  body.light .balances,
-  body.light .referral,
-  body.light .forms,
-  body.light .chart {
-    background: rgba(255, 255, 255, 0.9);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  }
-  
-  .balances h2, .referral h2, .forms h2, .chart h2 {
-    color: #ffd700;
-    margin-bottom: 1rem;
-  }
-  
-  body.light .balances h2,
-  body.light .referral h2,
-  body.light .forms h2,
-  body.light .chart h2 {
-    color: #333;
-  }
-  
-  .balances p, .referral p {
-    color: #4ecdc4;
-    margin: 0.5rem 0;
-  }
-  
-  body.light .balances p,
-  body.light .referral p {
-    color: #45b7aa;
-  }
-  
-  .forms form {
-    margin-bottom: 1.5rem;
-  }
-  
-  .forms h3 {
-    color: #fff;
-    margin-bottom: 0.5rem;
-  }
-  
-  body.light .forms h3 {
-    color: #333;
-  }
-  
-  .forms input,
-  .forms select {
-    width: 100%;
-    padding: 0.75rem;
-    margin: 0.5rem 0;
-    border: none;
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.1);
-    color: #fff;
-    font-family: 'Poppins', sans-serif;
-  }
-  
-  body.light .forms input,
-  body.light .forms select {
-    background: #e8ecef;
-    color: #333;
-  }
-  
-  .forms button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    padding: 0.75rem;
-    margin: 0.5rem 0;
-    border: none;
-    border-radius: 8px;
-    background: linear-gradient(90deg, #ffd700, #ffaa00);
-    color: #1a1a2e;
-    font-family: 'Poppins', sans-serif;
-    font-weight: 500;
-    cursor: pointer;
-  }
-  
-  .forms button svg {
-    margin-right: 0.5rem;
-  }
-  
-  .notification {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    background: rgba(78, 205, 196, 0.9);
-    color: #fff;
-    padding: 0.75rem 1.5rem;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-    z-index: 1000;
-    animation: slideIn 0.3s ease-out;
-  }
-  
-  @keyframes slideIn {
-    from { transform: translateX(100%); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
-  }
-  
-  @media (max-width: 768px) {
-    .dashboard-content {
-      grid-template-columns: 1fr;
-    }
-  }
+  min-height: 100vh;
+  position: relative;
+  padding: 1rem;
+  background: linear-gradient(to bottom right, #0a0a23, #1a1a2e);
+}
+
+.stars-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: url('https://www.transparenttextures.com/patterns/stardust.png') repeat;
+  opacity: 0.3;
+  z-index: -1;
+}
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  background: rgba(26, 26, 46, 0.9);
+  border-radius: 12px;
+  margin-bottom: 2rem;
+  border: 1px solid rgba(78, 205, 196, 0.3);
+}
+
+body.light .dashboard-header {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(69, 183, 170, 0.3);
+}
+
+.dashboard-header h1 {
+  color: #ffd700;
+  font-size: 1.8rem;
+  background: linear-gradient(45deg, #ffd700, #ff00ff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+body.light .dashboard-header h1 {
+  color: #333;
+  background: none;
+  -webkit-background-clip: initial;
+  background-clip: initial;
+}
+
+.header-actions button {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 1.2rem;
+  margin-left: 1rem;
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+body.light .header-actions button {
+  color: #333;
+}
+
+.header-actions button:hover {
+  color: #ffd700;
+}
+
+body.light .header-actions button:hover {
+  color: #45b7aa;
+}
+
+.dashboard-content {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+}
+
+.balances,
+.referral,
+.forms,
+.chart,
+.savings,
+.investments,
+.transactions {
+  background: rgba(26, 26, 46, 0.9);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(78, 205, 196, 0.3);
+}
+
+body.light .balances,
+body.light .referral,
+body.light .forms,
+body.light .chart,
+body.light .savings,
+body.light .investments,
+body.light .transactions {
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(69, 183, 170, 0.3);
+}
+
+.balances h2,
+.referral h2,
+.forms h2,
+.chart h2,
+.savings h2,
+.investments h2,
+.transactions h2 {
+  color: #ffd700;
+  margin-bottom: 1rem;
+}
+
+body.light .balances h2,
+body.light .referral h2,
+body.light .forms h2,
+body.light .chart h2,
+body.light .savings h2,
+body.light .investments h2,
+body.light .transactions h2 {
+  color: #333;
+}
+
+.balances p,
+.referral p,
+.savings p,
+.investments p,
+.transactions p {
+  color: #e0e0e0;
+  font-size: 1rem;
+}
+
+body.light .balances p,
+body.light .referral p,
+body.light .savings p,
+body.light .investments p,
+body.light .transactions p {
+  color: #555;
+}
+
+.forms form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.forms h3 {
+  color: #ffd700;
+  font-size: 1.2rem;
+  margin-bottom: 0.5rem;
+}
+
+body.light .forms h3 {
+  color: #333;
+}
+
+.forms input,
+.forms select,
+.forms button {
+  padding: 0.8rem;
+  border-radius: 8px;
+  border: 1px solid rgba(78, 205, 196, 0.5);
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 1rem;
+}
+
+body.light .forms input,
+body.light .forms select,
+body.light .forms button {
+  border: 1px solid rgba(69, 183, 170, 0.5);
+  background: #f5f5f5;
+  color: #333;
+}
+
+.forms button {
+  background: #45b7aa;
+  border: none;
+  cursor: pointer;
+  transition: background 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.forms button:hover {
+  background: #ffd700;
+}
+
+body.light .forms button {
+  background: #45b7aa;
+}
+
+body.light .forms button:hover {
+  background: #333;
+  color: #fff;
+}
+
+.chart canvas {
+  max-width: 100%;
+}
+
+.transactions .space-y-4 > div {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 1rem;
+  border-radius: 8px;
+}
+
+body.light .transactions .space-y-4 > div {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.transactions p {
+  margin: 0.5rem 0;
+}
+
+.savings .grid,
+.investments .grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.card {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid rgba(78, 205, 196, 0.2);
+}
+
+body.light .card {
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(69, 183, 170, 0.2);
+}
+
+.card h5 {
+  color: #ffd700;
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+}
+
+body.light .card h5 {
+  color: #333;
+}
+
+.card.basic { border-color: #ffd700; }
+.card.gold { border-color: #ffaa00; }
+.card.platinum { border-color: #cccccc; }
+
+.flex {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.notification {
+  background: rgba(69, 183, 170, 0.9);
+  color: #fff;
+  padding: 0.8rem;
+  border-radius: 8px;
+  margin: 0.5rem 0;
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 1000;
+}
+
+body.light .notification {
+  background: rgba(69, 183, 170, 0.7);
+  color: #333;
+}
+
+.error {
+  color: #ff4d4d;
+  font-size: 0.9rem;
+  margin: 0.5rem 0;
+}
+
+body.light .error {
+  color: #d32f2f;
+}
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: rgba(26, 26, 46, 0.9);
+  padding: 2rem;
+  border-radius: 12px;
+  border: 1px solid rgba(78, 205, 196, 0.3);
+  max-width: 500px;
+  width: 90%;
+}
+
+body.light .modal-content {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(69, 183, 170, 0.3);
+}
+
+.modal-content h3 {
+  color: #ffd700;
+  margin-bottom: 1rem;
+}
+
+body.light .modal-content h3 {
+  color: #333;
+}
+
+.modal-content p {
+  color: #e0e0e0;
+  margin-bottom: 1rem;
+}
+
+body.light .modal-content p {
+  color: #555;
+}
+
+.modal-content img {
+  max-width: 100%;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.modal-actions button {
+  padding: 0.8rem 1.5rem;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.modal-actions button:first-child {
+  background: #ff4d4d;
+  color: #fff;
+}
+
+.modal-actions button:first-child:hover {
+  background: #d32f2f;
+}
+
+.modal-actions button:last-child {
+  background: #45b7aa;
+  color: #fff;
+}
+
+.modal-actions button:last-child:hover {
+  background: #ffd700;
+}
+
+body.light .modal-actions button:last-child:hover {
+  background: #333;
+}

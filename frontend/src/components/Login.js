@@ -1,4 +1,4 @@
-// C:\Users\HP\CosmicVault\frontend\src\components\Login.js
+// C:\Users\HP\CosmicVault-New\frontend\src\components\Login.js
 import { useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import axios from 'axios';
@@ -9,13 +9,25 @@ function Login({ setToken }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [twoFactorCode, setTwoFactorCode] = useState('');
-  const [error, setError] = useState('');
+  const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const history = useHistory();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setErrors({});
+
+    // Client-side validation
+    const newErrors = {};
+    if (!email) newErrors.email = 'Email is required';
+    if (!password) newErrors.password = 'Password is required';
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      setLoading(false);
+      return;
+    }
+
     try {
       const res = await axios.post('http://localhost:5000/api/auth/login', {
         email,
@@ -24,10 +36,14 @@ function Login({ setToken }) {
       });
       setToken(res.data.token);
       localStorage.setItem('token', res.data.token);
+      console.log('Login - Login successful, redirecting to /');
       history.push('/');
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to login.');
-      setTimeout(() => setError(''), 3000);
+      console.error('Login - Error:', err.response?.data, err.message);
+      setErrors({
+        server: err.response?.data?.message || 'Failed to log in. Please try again.',
+      });
+      setTimeout(() => setErrors({}), 5000);
     } finally {
       setLoading(false);
     }
@@ -43,7 +59,7 @@ function Login({ setToken }) {
         transition={{ duration: 0.5 }}
       >
         <h2>Login to CosmicVault</h2>
-        {error && <p className="error">{error}</p>}
+        {errors.server && <p className="error">{errors.server}</p>}
         {loading ? (
           <p>Loading...</p>
         ) : (
@@ -57,6 +73,7 @@ function Login({ setToken }) {
               disabled={loading}
               aria-label="Email"
             />
+            {errors.email && <p className="error">{errors.email}</p>}
             <input
               type="password"
               value={password}
@@ -66,13 +83,14 @@ function Login({ setToken }) {
               disabled={loading}
               aria-label="Password"
             />
+            {errors.password && <p className="error">{errors.password}</p>}
             <input
               type="text"
               value={twoFactorCode}
               onChange={(e) => setTwoFactorCode(e.target.value)}
               placeholder="2FA Code (if enabled)"
               disabled={loading}
-              aria-label="2FA code"
+              aria-label="2FA Code"
             />
             <motion.button
               type="submit"

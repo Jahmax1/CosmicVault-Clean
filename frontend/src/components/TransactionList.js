@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import io from 'socket.io-client';
 import axios from 'axios';
+import { motion } from 'framer-motion'; // Added for animations
 
 const socket = io('http://localhost:5000', { withCredentials: true });
 
@@ -21,6 +22,8 @@ const TransactionList = () => {
   const [investmentName, setInvestmentName] = useState('');
   const [investmentAmount, setInvestmentAmount] = useState('');
   const [investmentType, setInvestmentType] = useState('basic');
+  const [recipientDetails, setRecipientDetails] = useState(null); // Added
+  const [showConfirm, setShowConfirm] = useState(false); // Added
 
   useEffect(() => {
     const fetchData = async () => {
@@ -59,9 +62,29 @@ const TransactionList = () => {
     return () => socket.off('transactionUpdate');
   }, []);
 
+  const handleVerifyRecipient = async () => {
+    if (!recipient) {
+      setError('Please enter a recipient wallet ID');
+      return;
+    }
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.get(`http://localhost:5000/api/verify-wallet/${recipient}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setRecipientDetails(res.data);
+      setShowConfirm(true);
+      setError('');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to verify recipient');
+      setRecipientDetails(null);
+      setShowConfirm(false);
+    }
+  };
+
   const handleSend = async (type) => {
-    if (!amount || !recipient) {
-      setError('Please enter amount and recipient');
+    if (!amount || !recipient || !recipientDetails) {
+      setError('Please verify the recipient before sending');
       return;
     }
     try {
@@ -79,6 +102,8 @@ const TransactionList = () => {
       setTransactions(res.data.transactions);
       setAmount('');
       setRecipient('');
+      setRecipientDetails(null);
+      setShowConfirm(false);
       setError('');
     } catch (err) {
       setError('Transaction failed: ' + (err.response?.data?.message || 'Unknown error'));
@@ -165,6 +190,40 @@ const TransactionList = () => {
           </div>
         )}
 
+        {/* Confirmation Modal */}
+        {showConfirm && recipientDetails && (
+          <motion.div
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <div className="bg-gray-800 p-6 rounded-lg shadow-lg max-w-md w-full">
+              <h3 className="text-xl font-semibold mb-4 text-blue-400">Confirm Recipient</h3>
+              <p className="text-gray-300">Name: {recipientDetails.username}</p>
+              <img
+                src={`http://localhost:5000/${recipientDetails.selfiePath}`}
+                alt="Recipient Selfie"
+                className="w-32 h-32 object-cover rounded-lg mt-4"
+              />
+              <div className="flex justify-end mt-6">
+                <button
+                  onClick={() => setShowConfirm(false)}
+                  className="px-4 py-2 bg-gray-600 rounded-lg mr-2"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => handleSend('send')}
+                  className="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg"
+                >
+                  Confirm
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
         {/* Balance Section */}
         <div className="mb-8 p-6 bg-gray-800 bg-opacity-50 backdrop-blur-lg rounded-2xl border border-blue-500/30 shadow-xl">
           <h2 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">
@@ -191,7 +250,7 @@ const TransactionList = () => {
                 type="text"
                 value={recipient}
                 onChange={(e) => setRecipient(e.target.value)}
-                placeholder="Recipient (e.g., 0700335911, email)"
+                placeholder="Recipient Wallet ID"
                 className="w-full p-3 rounded-lg bg-gray-900 text-white border border-blue-500/50 focus:border-blue-400 focus:ring-2 focus:ring-blue-400/50 transition-all duration-300"
               />
             </div>
@@ -222,10 +281,10 @@ const TransactionList = () => {
           </div>
           <div className="mt-6 flex space-x-4">
             <button
-              onClick={() => handleSend('send')}
+              onClick={handleVerifyRecipient}
               className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 p-3 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-blue-500/50"
             >
-              Send
+              Verify Recipient
             </button>
             <button
               onClick={() => handleSend('deposit')}

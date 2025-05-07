@@ -1,0 +1,163 @@
+const express = require('express');
+const router = express.Router();
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const speakeasy = require('speakeasy');
+const { check, validationResult } = require('express-validator');
+const multer = require('multer');
+const path = require('path');
+const User = require('../models/User');
+const authMiddleware = require('../middleware/auth');
+
+// Multer setup for selfie upload
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/');
+  },
+  filename: (req, file, cb) => {
+    cb(null, `${Date.now()}-${file.originalname}`);
+  },
+});
+const upload = multer({
+  storage,
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only images are allowed'));
+    }
+  },
+}).single('selfie');
+
+router.post(
+  '/register',
+  (req, res, next) => {
+    console.log('[Register] Route hit: POST /api/auth/register');
+    console.log('[Register] Before Multer - Headers:', req.headers);
+    upload(req, res, (err) => {
+      if (err) {
+        console.error('[Register] Multer error:', err);
+        return res.status(400).json({ message: `Multer error: ${err.message}` });
+      }
+      console.log('[Register] After Multer - req.body:', req.body);
+      console.log('[Register] After Multer - req.file:', req.file);
+      next();
+    });
+  },
+  async (req, res) => {
+    console.log('[Register] Processing request');
+    console.log('[Register] Parsed request body:', req.body);
+    console.log('[Register] Password value:', req.body.password);
+
+    if (!req.body.password) {
+      console.log('[Register] Password missing');
+      return res.status(400).json({ message: 'Password is required' });
+    }
+
+    try {
+      const { email, username, password, idType, idNumber } = req.body;
+      console.log('[Register] Destructured fields:', { email, username, password, idType, idNumber });
+
+      // Basic validation
+      if (!email || !username || !idType || !idNumber || !req.file) {
+        console.log('[Register] Missing required fields');
+        return res.status(400).json({ message: 'All fields are required' });
+      }
+
+      // Check existing user
+      console.log('[Register] Checking for existing user:', email);
+      let user = await User.findOne({ email });
+      if (user) {
+        console.log('[Register] User already exists:', email);
+        return res.status(400).json({ message: 'User already exists' });
+      }
+
+      // Hash password
+      console.log('[Register] Hashing password:', password);
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      // Create user
+      user = new User({
+        email,
+        username,
+        password: hashedPassword,
+        idType,
+        idNumber,
+        selfiePath: req.file.path,
+        walletId: `WALLET-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
+        referralCode: `REF-${Math.random().toString(36).substr(2, 8).toUpperCase()}`,
+      });
+
+      console.log('[Register] Saving user:', email);
+      await user.save();
+      console.log('[Register] User saved:', email);
+
+      const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+      console.log('[Register] Token generated:', email);
+      res.json({ token });
+    } catch (err) {
+      console.error('[Register] Error:', err.message, err.stack);
+      res.status(500).json({ message: `Server error: ${err.message}` });
+    }
+  }
+);
+
+router.post('/login', async (req, res) => {
+  console.log('[Login] Route hit: POST /api/auth/login');
+  const { email, password, twoFactorCode } = req.body;
+  console.log('[Login] Request body:', { email, password, twoFactorCode });
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      console.log('[Login] User not found:', email);
+      return res.status(400).json({ message: 'Invalid credentials' });
+    }
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      console.log('[Login] Password mismatch:', email);
+      return res.status(400).json({ message: 'Invalid credentials' });
+    }
+    if (user.twoFactorEnabled && twoFactorCode) {
+      const verified = speakeasy.totp.verify({
+        secret: user.twoFactorSecret,
+        encoding: 'base32',
+        token: twoFactorCode,
+      });
+      if (!verified) {
+        console.log('[Login] Invalid 2FA code:', email);
+        return res.status(400).json({ message: 'Invalid 2FA code' });
+      }
+    }
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    console.log('[Login] Token generated:', email);
+    res.json({ token });
+  } catch (err) {
+    console.error('[Login] Error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+router.post('/setup-2fa', authMiddleware, async (req, res) => {
+  console.log('[Setup 2FA] Route hit: POST /api/auth/setup-2fa');
+  console.log('[Setup 2FA] User ID:', req.user.id);
+  try {
+    const user = await User.findById(req.user.id);
+    if (user.twoFactorEnabled) {
+      console.log('[Setup 2FA] 2FA already enabled:', user.email);
+      return res.status(400).json({ message: '2FA already enabled' });
+    }
+    const secret = speakeasy.generateSecret({
+      name: `CosmicVault:${user.email}`,
+    });
+    user.twoFactorSecret = secret.base32;
+    user.twoFactorEnabled = true;
+    await user.save();
+    console.log('[Setup 2FA] 2FA enabled:', user.email);
+    res.json({ secret: secret.base32, qrCodeUrl: secret.otpauth_url });
+  } catch (err) {
+    console.error('[Setup 2FA] Error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+module.exports = router;

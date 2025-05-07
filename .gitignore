@@ -1,4 +1,3 @@
-# C:\Users\HP\CosmicVault-New\.gitignore
 node_modules/
 package-lock.json
 backend/.env
@@ -6,4 +5,4 @@ frontend/build/
 Redis/dump.rdb
 *.log
 frontend/node_modules/.cache/
-*.pack
+backend/uploads/
