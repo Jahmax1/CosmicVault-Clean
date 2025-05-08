@@ -1,4 +1,3 @@
-/* C:\Users\HP\CosmicVault-New\frontend\src\Dashboard.css */
 .dashboard {
   min-height: 100vh;
   position: relative;
@@ -75,6 +74,8 @@ body.light .header-actions button:hover {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 2rem;
+  min-height: 100vh;
+  padding-bottom: 2rem;
 }
 
 .balances,
@@ -83,7 +84,8 @@ body.light .header-actions button:hover {
 .chart,
 .savings,
 .investments,
-.transactions {
+.transactions,
+.pools {
   background: rgba(26, 26, 46, 0.9);
   border-radius: 12px;
   padding: 1.5rem;
@@ -97,7 +99,8 @@ body.light .forms,
 body.light .chart,
 body.light .savings,
 body.light .investments,
-body.light .transactions {
+body.light .transactions,
+body.light .pools {
   background: rgba(255, 255, 255, 0.9);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   border: 1px solid rgba(69, 183, 170, 0.3);
@@ -109,7 +112,8 @@ body.light .transactions {
 .chart h2,
 .savings h2,
 .investments h2,
-.transactions h2 {
+.transactions h2,
+.pools h2 {
   color: #ffd700;
   margin-bottom: 1rem;
 }
@@ -120,7 +124,8 @@ body.light .forms h2,
 body.light .chart h2,
 body.light .savings h2,
 body.light .investments h2,
-body.light .transactions h2 {
+body.light .transactions h2,
+body.light .pools h2 {
   color: #333;
 }
 
@@ -128,7 +133,8 @@ body.light .transactions h2 {
 .referral p,
 .savings p,
 .investments p,
-.transactions p {
+.transactions p,
+.pools p {
   color: #e0e0e0;
   font-size: 1rem;
 }
@@ -137,7 +143,8 @@ body.light .balances p,
 body.light .referral p,
 body.light .savings p,
 body.light .investments p,
-body.light .transactions p {
+body.light .transactions p,
+body.light .pools p {
   color: #555;
 }
 
@@ -159,7 +166,8 @@ body.light .forms h3 {
 
 .forms input,
 .forms select,
-.forms button {
+.forms button,
+.forms textarea {
   padding: 0.8rem;
   border-radius: 8px;
   border: 1px solid rgba(78, 205, 196, 0.5);
@@ -170,7 +178,8 @@ body.light .forms h3 {
 
 body.light .forms input,
 body.light .forms select,
-body.light .forms button {
+body.light .forms button,
+body.light .forms textarea {
   border: 1px solid rgba(69, 183, 170, 0.5);
   background: #f5f5f5;
   color: #333;
@@ -218,9 +227,10 @@ body.light .transactions .space-y-4 > div {
 }
 
 .savings .grid,
-.investments .grid {
+.investments .grid,
+.pools .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 1rem;
 }
 
@@ -249,6 +259,56 @@ body.light .card h5 {
 .card.basic { border-color: #ffd700; }
 .card.gold { border-color: #ffaa00; }
 .card.platinum { border-color: #cccccc; }
+
+.pools .card {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid rgba(78, 205, 196, 0.2);
+}
+
+body.light .pools .card {
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(69, 183, 170, 0.2);
+}
+
+.pools .card h5 {
+  color: #ffd700;
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+}
+
+body.light .pools .card h5 {
+  color: #333;
+}
+
+.pools .card p {
+  margin: 0.25rem 0;
+  color: #e0e0e0;
+}
+
+body.light .pools .card p {
+  color: #555;
+}
+
+.pools .card button {
+  margin-top: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: #45b7aa;
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.pools .card button:hover {
+  background: #ffd700;
+}
+
+body.light .pools .card button:hover {
+  background: #333;
+}
 
 .flex {
   display: flex;
@@ -367,4 +427,60 @@ body.light .modal-content p {
 
 body.light .modal-actions button:last-child:hover {
   background: #333;
+}
+
+.leaderboard {
+  margin-top: 1rem;
+}
+
+.leaderboard ul {
+  list-style: none;
+  padding: 0;
+}
+
+.leaderboard li {
+  margin: 0.5rem 0;
+}
+
+.create-pool-btn,
+.view-pools-btn {
+  display: inline-flex;
+  padding: 12px 24px;
+  margin: 10px 10px 10px 0;
+  background-color: #ffd700;
+  color: #000;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  animation: pulse 2s infinite;
+}
+
+.create-pool-btn:hover,
+.view-pools-btn:hover {
+  background-color: #ffeb3b;
+  transform: translateY(-2px);
+}
+
+.pool-actions {
+  margin-bottom: 20px;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7);
+  }
+  70% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 10px rgba(255, 215, 0, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(255, 215, 0, 0);
+  }
 }

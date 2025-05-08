@@ -1,33 +1,22 @@
 // C:\Users\HP\CosmicVault-New\backend\middleware\auth.js
 const jwt = require('jsonwebtoken');
 
-const authMiddleware = (req, res, next) => {
-  console.log('[AuthMiddleware] Checking authorization for:', req.method, req.url);
-  
-  // Get token from Authorization header
-  const authHeader = req.header('Authorization');
-  if (!authHeader) {
-    console.log('[AuthMiddleware] No Authorization header provided');
-    return res.status(401).json({ message: 'No token, authorization denied' });
-  }
+module.exports = (req, res, next) => {
+  console.log('[AuthMiddleware] Checking authorization for:', req.method, req.path);
+  const token = req.header('Authorization')?.replace('Bearer ', '');
 
-  // Check for Bearer token format
-  const token = authHeader.replace('Bearer ', '');
   if (!token) {
-    console.log('[AuthMiddleware] Invalid token format');
-    return res.status(401).json({ message: 'Invalid token format' });
+    console.log('[AuthMiddleware] No token provided');
+    return res.status(401).json({ message: 'No token provided' });
   }
 
   try {
-    // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_jwt_secret');
     console.log('[AuthMiddleware] Token verified, user ID:', decoded.id);
-    req.user = { id: decoded.id };
+    req.userId = decoded.id;
     next();
   } catch (err) {
-    console.error('[AuthMiddleware] Token verification failed:', err.message);
-    res.status(401).json({ message: 'Token is not valid' });
+    console.error('[AuthMiddleware] Invalid token:', err.message);
+    res.status(401).json({ message: 'Invalid token' });
   }
 };
-
-module.exports = authMiddleware;

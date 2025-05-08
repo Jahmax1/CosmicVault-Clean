@@ -1,9 +1,10 @@
-// C:\Users\HP\CosmicVault\frontend\src\App.js
 import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Switch, Route, Redirect } from 'react-router-dom';
 import Login from './components/Login';
 import Register from './components/Register';
 import Dashboard from './components/Dashboard';
+import PoolFund from './components/PoolFund';
+import CreatePool from './components/CreatePool';
 import io from 'socket.io-client';
 import './App.css';
 
@@ -39,6 +40,12 @@ function App() {
           </Route>
           <Route exact path="/">
             {token ? <Dashboard token={token} setToken={setToken} /> : <Redirect to="/login" />}
+          </Route>
+          <Route exact path="/pools">
+            {token ? <PoolFund token={token} setToken={setToken} /> : <Redirect to="/login" />}
+          </Route>
+          <Route exact path="/create-pool">
+            {token ? <CreatePool token={token} setToken={setToken} /> : <Redirect to="/login" />}
           </Route>
         </Switch>
       </div>

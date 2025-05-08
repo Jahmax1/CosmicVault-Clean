@@ -1,27 +1,44 @@
-// C:\Users\HP\CosmicVault\backend\routes\deposit.js
+// C:\Users\HP\CosmicVault-New\backend\routes\deposit.js
 const express = require('express');
 const router = express.Router();
+const auth = require('../middleware/auth');
 const User = require('../models/User');
-const authMiddleware = require('../middleware/auth');
 
-router.post('/deposit', authMiddleware, async (req, res) => {
-  const { amount, currency } = req.body;
-  if (!['USD', 'EUR', 'GBP'].includes(currency) || amount <= 0) {
-    return res.status(400).json({ message: 'Invalid amount or currency' });
-  }
-  try {
-    const user = await User.findById(req.user.id);
-    user.balances[currency] += amount;
-    user.transactions.push({ type: 'deposit', amount, currency });
-    user.stardustPoints += Math.floor(amount / 10);
-    await user.save();
-    const io = req.app.get('io');
-    io.to(user._id.toString()).emit('notification', `Deposited ${amount} ${currency}`);
-    res.json({ message: 'Deposit successful', balance: user.balances[currency] });
-  } catch (err) {
-    console.error('Deposit error:', err);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
+module.exports = (io) => {
+  router.post('/', auth, async (req, res) => {
+    try {
+      const { amount, currency } = req.body;
+      console.log('[Deposit] Request body:', req.body);
 
-module.exports = router;
+      if (!amount || !currency) {
+        return res.status(400).json({ message: 'Amount and currency are required' });
+      }
+
+      const user = await User.findById(req.user.id);
+      if (!user) return res.status(404).json({ message: 'User not found' });
+
+      user.balances[currency] = (user.balances[currency] || 0) + amount;
+      user.transactions.push({
+        type: 'Deposit',
+        amount,
+        currency,
+        date: new Date(),
+      });
+
+      await user.save();
+      console.log(`[Deposit] Deposited ${amount} ${currency} for user: ${user.email}`);
+
+      io.to(user._id.toString()).emit('balanceUpdate', {
+        currency,
+        balance: user.balances[currency],
+      });
+
+      res.json({ message: `Deposited ${amount} ${currency} successfully` });
+    } catch (err) {
+      console.error('[Deposit] Error:', err.message);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  return router;
+};
