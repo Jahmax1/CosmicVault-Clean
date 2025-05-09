@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/CosmicVault-Clean/static/css/main.3703ae01.css",
+    "main.js": "/CosmicVault-Clean/static/js/main.faf626aa.js",
+    "index.html": "/CosmicVault-Clean/index.html",
+    "main.3703ae01.css.map": "/CosmicVault-Clean/static/css/main.3703ae01.css.map",
+    "main.faf626aa.js.map": "/CosmicVault-Clean/static/js/main.faf626aa.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.3703ae01.css",
+    "static/js/main.faf626aa.js"
+  ]
+}

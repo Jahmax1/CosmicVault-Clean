@@ -1,0 +1,8 @@
+node_modules/
+package-lock.json
+backend/.env
+frontend/build/
+Redis/dump.rdb
+*.log
+frontend/node_modules/.cache/
+backend/uploads/
