@@ -1,81 +1,60 @@
 # CosmicVault 🚀
 
-Welcome to **CosmicVault**, a futuristic financial platform that takes money management to the stars! 🌟 Built with a sleek, sci-fi-inspired UI, CosmicVault lets users send money across platforms, save for the future, invest with confidence, and manage their finances with ease—all while enjoying a cosmic experience. Whether you're transferring to mobile money, banks, forex brokers like Exness, or crypto platforms like Binance, CosmicVault has you covered for both local and international transactions.
+**CosmicVault** is a decentralized funding platform that blends a futuristic, sci-fi-inspired UI with powerful financial tools. Built with React, Node.js, and MongoDB, it enables users to create and contribute to funding pools, manage multi-currency wallets, redeem Stardust Points, and access an admin panel for withdrawal management—all wrapped in a cosmic, starry aesthetic. Whether you're crowdfunding a project or managing personal finances, CosmicVault takes you to the stars! 🌟
 
 ## ✨ Features
 
-- **Multi-Platform Transfers**: Send money to mobile money (e.g., `0700335911` via Airtel), banks, other CosmicVault wallets, Exness, or Binance—locally or internationally.
-- **Deposit & Withdraw**: Add funds to your wallet or withdraw with ease.
-- **Savings Plans**: Create accessible or fixed (30-day lock) savings plans to reach your financial goals.
-- **Investment Options**: Invest in Basic, Gold, or Platinum plans with varying risk levels and track your dividends.
-- **Real-Time Notifications**: Get instant updates on transactions via Socket.IO.
-- **Futuristic UI**: A cosmic, neon-glow design with glassmorphism, gradient animations, and a starry backdrop.
-- **Secure Authentication**: Register and login with email and password, powered by JWT.
+- **Funding Pools**: Create, view, and contribute to decentralized funding pools with real-time updates via Socket.IO.
+- **Multi-Currency Support**: Manage wallets in USD, EUR, GBP, and track balances seamlessly.
+- **Stardust Points**: Earn and redeem points for rewards within the platform.
+- **Secure Authentication**: Register and log in with email, password, and KYC verification using JWT and bcrypt.
+- **Admin Panel**: Manage withdrawals and oversee platform activity (admin-only).
+- **Real-Time Notifications**: Instant updates on pool contributions, balance changes, and more.
+- **Cosmic UI**: A neon-glow, glassmorphism design with gradient animations and a starry backdrop.
+- **Multi-Platform Transfers**: Send funds to other CosmicVault wallets, mobile money, banks, Exness, or Binance—locally or internationally.
+- **Savings & Investments**: Create accessible or fixed savings plans and invest in Basic, Gold, or Platinum options.
 
 ## 🖼️ Screenshots
 
-### Login Page
-![Login Page](screenshots/login.png)
+### Login/Authentication
+![Login Page](screenshots/Screenshot_9-5-2025_17123_localhost.jpeg)
+*Login page with cosmic starry background and secure authentication form.*
 
-### Main Dashboard
-![Main Dashboard](screenshots/dashboard.png)
+### Registration with KYC
+![Registration Page](screenshots/Screenshot_9-5-2025_171141_localhost.jpeg)
+*Registration form with KYC verification for secure onboarding.*
+
+### Dashboard
+![Dashboard](screenshots/Screenshot_9-5-2025_171233_localhost.jpeg)
+*Main dashboard showcasing balances, funding pools, and transaction history.*
+
+### Creating and Viewing Funding Pools
+![Create Pool](screenshots/Screenshot_9-5-2025_171311_localhost.jpeg)
+*Interface for creating and viewing funding pools with real-time updates.*
+
+### View and Search Funding Pools
+![Search Pools](screenshots/Screenshot_9-5-2025_171344_localhost.jpeg)
+*Search and browse funding pools with filtering options.*
 
 ## 🛠️ Tech Stack
 
-- **Frontend**: React, Tailwind CSS, Axios
+- **Frontend**: React, Tailwind CSS, Framer Motion, Axios, Chart.js, QRCode.react
 - **Backend**: Node.js, Express, MongoDB, Socket.IO
 - **Authentication**: JWT, bcrypt
-- **Styling**: Custom cosmic theme with gradients, glassmorphism, and animations
+- **Styling**: Custom cosmic theme with gradients, glassmorphism, and starry animations
+- **Deployment**: GitHub Pages (frontend), Heroku/Render (backend, optional)
 
 ## 🚀 Getting Started
 
 ### Prerequisites
 - Node.js (v16 or higher)
-- MongoDB (local or Atlas)
+- MongoDB (local or MongoDB Atlas)
 - Git
+- A GitHub account for deployment
 
 ### Installation
 
 1. **Clone the Repository**
    ```bash
    git clone https://github.com/Jahmax1/CosmicVault-Clean.git
-   cd CosmicVault
-
- Project Structure
-
-CosmicVault/
-├── backend/
-│   ├── models/          # MongoDB schemas (User.js)
-│   ├── routes/          # API routes (user.js)
-│   ├── server.js        # Express server with Socket.IO
-│   └── .env             # Environment variables
-├── frontend/
-│   ├── src/
-│   │   ├── components/  # React components (Login.js, Register.js, TransactionList.js)
-│   │   ├── App.js       # Main app with routing
-│   │   └── App.css      # Cosmic theme styles
-└── README.md
-
-   Contributing
-Want to make CosmicVault even more stellar? Contributions are welcome!
-Fork the repo.
-
-Create a new branch (git checkout -b feature/awesome-feature).
-
-Commit your changes (git commit -m "Add awesome feature").
-
-Push to the branch (git push origin feature/awesome-feature).
-
-Open a Pull Request.
-
- Contact
-Built with  by Jahmax1.
-Reach out for collabs or feedback:jahmaxsimba@gmail.com(jahmaxsimba@gmail.com).
- Acknowledgments
-Inspired by sci-fi aesthetics and the dream of cosmic financial freedom.
-
-Thanks to the open-source community for tools like React, Tailwind CSS, and Socket.IO.
-
-“To the stars and beyond—manage your money with CosmicVault!” 
-
- 
+   cd CosmicVault-Clean
