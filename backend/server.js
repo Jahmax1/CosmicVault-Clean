@@ -1,4 +1,3 @@
-// C:\Users\HP\CosmicVault-New\backend\server.js
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
@@ -9,22 +8,27 @@ const http = require('http');
 const userRoutes = require('./routes/user');
 const poolRoutes = require('./routes/pool');
 const authRoutes = require('./routes/auth');
+const adminRoutes = require('./routes/admin');
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
     origin: 'http://localhost:3000',
-    methods: ['GET', 'POST'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
   },
   pingTimeout: 60000,
   pingInterval: 25000,
+  connectionStateRecovery: {
+    maxDisconnectionDuration: 2 * 60 * 1000,
+    skipMiddlewares: true,
+  },
 });
 
-app.use(cors({ origin: 'http://localhost:3000' }));
-app.use(express.json());
+const userConnections = new Map();
 
-// Socket.IO authentication
 io.use((socket, next) => {
   const token = socket.handshake.auth.token;
   if (!token) {
@@ -36,6 +40,12 @@ io.use((socket, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     socket.userId = decoded.id;
     console.log('[Socket.IO] User authenticated:', socket.userId);
+
+    if (userConnections.has(socket.userId)) {
+      console.log(`[Socket.IO] User ${socket.userId} already connected, closing old connection`);
+      userConnections.get(socket.userId).disconnect();
+    }
+    userConnections.set(socket.userId, socket);
     next();
   } catch (err) {
     console.error('[Socket.IO] Authentication error:', err.message);
@@ -45,7 +55,6 @@ io.use((socket, next) => {
 
 io.on('connection', (socket) => {
   console.log('[Socket.IO] User connected:', socket.userId);
-
   socket.join(socket.userId);
   console.log(`[Socket.IO] User ${socket.userId} joined room: ${socket.userId}`);
 
@@ -56,21 +65,57 @@ io.on('connection', (socket) => {
 
   socket.on('disconnect', () => {
     console.log('[Socket.IO] User disconnected:', socket.userId);
+    if (userConnections.get(socket.userId) === socket) {
+      userConnections.delete(socket.userId);
+    }
   });
 });
 
-// Make io available to routes
+// Log all incoming requests (before CORS)
 app.use((req, res, next) => {
+  console.log(`[Server] ${req.method} ${req.url}`, {
+    body: req.method === 'POST' ? { ...req.body, password: '<redacted>' } : req.body,
+    query: req.query,
+    headers: req.headers.authorization ? 'Authorization: Bearer <redacted>' : 'No Authorization',
+  });
   req.io = io;
   next();
 });
 
-// Routes
-app.use('/api', userRoutes);
-app.use('/api/pools', poolRoutes);
-app.use('/api/auth', authRoutes);
+// Explicit CORS handling
+app.use(cors({
+  origin: 'http://localhost:3000',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+  preflightContinue: false,
+  optionsSuccessStatus: 204,
+}));
 
-// MongoDB connection with retry
+// Handle OPTIONS preflight explicitly
+app.options('*', cors());
+
+// JSON and static files
+app.use(express.json());
+app.use('/Uploads', express.static('Uploads'));
+
+// Routes
+app.use('/api', userRoutes(io));
+app.use('/api/pools', poolRoutes(io));
+app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes);
+
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error('[Server] Error:', {
+    message: err.message,
+    stack: err.stack,
+    url: req.url,
+    method: req.method,
+  });
+  res.status(500).json({ message: 'Internal server error' });
+});
+
 const connectWithRetry = async () => {
   try {
     await mongoose.connect(process.env.MONGO_URI, {

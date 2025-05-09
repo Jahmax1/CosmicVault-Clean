@@ -1,6 +1,5 @@
-// C:\Users\HP\CosmicVault-New\frontend\src\components\Dashboard.js
-import { useState, useEffect, useCallback } from 'react';
-import { useHistory } from 'react-router-dom';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { motion } from 'framer-motion';
 import { Line } from 'react-chartjs-2';
@@ -26,16 +25,10 @@ import {
 } from 'react-icons/io5';
 import { QRCodeCanvas } from 'qrcode.react';
 import io from 'socket.io-client';
+import { toast } from 'react-toastify';
 import '../Dashboard.css';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
-
-const socket = io('http://localhost:5000', {
-  auth: { token: localStorage.getItem('token') },
-  reconnection: true,
-  reconnectionAttempts: 5, // Increased for stability
-  reconnectionDelay: 3000,
-});
 
 const Dashboard = ({ token, setToken }) => {
   const [user, setUser] = useState(() => {
@@ -60,7 +53,7 @@ const Dashboard = ({ token, setToken }) => {
     type: 'accessible',
   });
   const [investment, setInvestment] = useState({
-    name: '', // Fixed syntax
+    name: '',
     amount: '',
     currency: 'USD',
     type: 'basic',
@@ -79,7 +72,84 @@ const Dashboard = ({ token, setToken }) => {
   const [loading, setLoading] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   const maxRetries = 3;
-  const history = useHistory();
+  const navigate = useNavigate();
+  const socketRef = useRef(null);
+
+  useEffect(() => {
+    if (token && user?._id) {
+      console.log('[Dashboard] Initializing Socket.IO with token');
+      if (!socketRef.current) {
+        socketRef.current = io('http://localhost:5000', {
+          auth: { token },
+          reconnection: true,
+          reconnectionAttempts: 5,
+          reconnectionDelay: 3000,
+          timeout: 10000,
+        });
+
+        socketRef.current.on('connect', () => {
+          console.log('[Socket.IO] Connected to server');
+          setError('');
+          if (user?._id) {
+            socketRef.current.emit('joinRoom', user._id.toString());
+            pools.forEach((pool) => {
+              socketRef.current.emit('joinRoom', pool._id.toString());
+            });
+          }
+        });
+
+        socketRef.current.on('connect_error', (err) => {
+          console.error('[Socket.IO] Connection error:', err.message);
+          setError('Failed to connect to server. Retrying...');
+          toast.error('Failed to connect to server. Retrying...');
+        });
+
+        socketRef.current.on('balanceUpdate', ({ currency, balance }) => {
+          console.log('[Socket.IO] Balance update received:', { currency, balance });
+          setUser((prev) => {
+            const updated = {
+              ...prev,
+              balances: { ...prev.balances, [currency]: balance },
+            };
+            localStorage.setItem('userData', JSON.stringify(updated));
+            return updated;
+          });
+          toast.info(`Balance updated: ${currency} ${balance}`);
+        });
+
+        socketRef.current.on('pointsUpdate', ({ stardustPoints }) => {
+          console.log('[Socket.IO] Points update received:', stardustPoints);
+          setUser((prev) => {
+            const updated = { ...prev, stardustPoints };
+            localStorage.setItem('userData', JSON.stringify(updated));
+            return updated;
+          });
+          toast.info(`Stardust Points updated: ${stardustPoints}`);
+        });
+
+        socketRef.current.on('poolUpdate', ({ poolId, currentAmount, status }) => {
+          console.log('[Socket.IO] Pool update received:', { poolId, currentAmount, status });
+          setPools((prev) =>
+            prev.map((p) => (p._id === poolId ? { ...p, currentAmount, status } : p))
+          );
+          toast.info(`Pool ${poolId} updated: ${currentAmount} ${status}`);
+        });
+      }
+
+      return () => {
+        if (socketRef.current) {
+          console.log('[Dashboard] Disconnecting Socket.IO');
+          socketRef.current.off('connect');
+          socketRef.current.off('connect_error');
+          socketRef.current.off('balanceUpdate');
+          socketRef.current.off('pointsUpdate');
+          socketRef.current.off('poolUpdate');
+          socketRef.current.disconnect();
+          socketRef.current = null;
+        }
+      };
+    }
+  }, [token, user?._id, pools]);
 
   const fetchUser = useCallback(async (retryAttempt = 0) => {
     if (!token) {
@@ -90,12 +160,13 @@ const Dashboard = ({ token, setToken }) => {
 
     if (retryAttempt >= maxRetries) {
       setError('Failed to load user data. Please check your connection or try again.');
+      toast.error('Failed to load user data.');
       setLoading(false);
       return;
     }
 
     try {
-      console.log('[fetchUser] Fetching user data with token:', token);
+      console.log('[fetchUser] Fetching user data with token');
       setLoading(true);
       const res = await axios.get('http://localhost:5000/api/user', {
         headers: { Authorization: `Bearer ${token}` },
@@ -106,12 +177,14 @@ const Dashboard = ({ token, setToken }) => {
       setError('');
       setRetryCount(0);
     } catch (err) {
-      console.error('[fetchUser] Failed to fetch user data:', err.message);
+      console.error('[fetchUser] Failed to fetch user data:', err.message, err.response?.data);
       if (err.response?.status === 401 && retryAttempt < maxRetries) {
         console.log('[fetchUser] Unauthorized, attempting token refresh');
         await refreshToken(retryAttempt + 1);
       } else {
-        setError('Failed to load user data. Please check your connection or try again.');
+        const errorMessage = err.response?.data?.message || 'Failed to load user data.';
+        setError(errorMessage);
+        toast.error(errorMessage);
         setRetryCount(retryAttempt + 1);
         setTimeout(() => fetchUser(retryAttempt + 1), 5000);
       }
@@ -128,24 +201,33 @@ const Dashboard = ({ token, setToken }) => {
 
     if (retryAttempt >= maxRetries) {
       setError('Failed to load pools. Please check your connection or try again.');
+      toast.error('Failed to load pools.');
       return;
     }
 
     try {
-      console.log('[fetchPools] Fetching pools with token:', token);
+      console.log('[fetchPools] Fetching pools with /api/pools/list');
       const res = await axios.get('http://localhost:5000/api/pools/list', {
         headers: { Authorization: `Bearer ${token}` },
       });
       console.log('[fetchPools] Pools fetched:', res.data);
       setPools(res.data);
       setRetryCount(0);
+      // Join pool rooms for real-time updates
+      if (socketRef.current && res.data.length > 0) {
+        res.data.forEach((pool) => {
+          socketRef.current.emit('joinRoom', pool._id.toString());
+        });
+      }
     } catch (err) {
-      console.error('[fetchPools] Failed to fetch pools:', err.message);
+      console.error('[fetchPools] Failed to fetch pools:', err.message, err.response?.data);
       if (err.response?.status === 401 && retryAttempt < maxRetries) {
         console.log('[fetchPools] Unauthorized, attempting token refresh');
         await refreshToken(retryAttempt + 1);
       } else {
-        setError('Failed to load pools. Please check your connection or try again.');
+        const errorMessage = err.response?.data?.message || 'Failed to load pools.';
+        setError(errorMessage);
+        toast.error(errorMessage);
         setRetryCount(retryAttempt + 1);
         setTimeout(() => fetchPools(retryAttempt + 1), 5000);
       }
@@ -155,11 +237,12 @@ const Dashboard = ({ token, setToken }) => {
   const refreshToken = useCallback(async (retryAttempt = 0) => {
     if (retryAttempt >= maxRetries) {
       setError('Session expired. Please log in again.');
+      toast.error('Session expired. Redirecting to login...');
       setTimeout(() => {
         setToken('');
         localStorage.removeItem('token');
         localStorage.removeItem('userData');
-        history.push('/login');
+        navigate('/login');
       }, 5000);
       return;
     }
@@ -174,16 +257,17 @@ const Dashboard = ({ token, setToken }) => {
       await fetchUser(0);
       await fetchPools(0);
     } catch (err) {
-      console.error('[refreshToken] Token refresh failed:', err.message);
+      console.error('[refreshToken] Token refresh failed:', err.message, err.response?.data);
       setError('Session expired. Please log in again.');
+      toast.error('Session expired. Redirecting to login...');
       setTimeout(() => {
         setToken('');
         localStorage.removeItem('token');
         localStorage.removeItem('userData');
-        history.push('/login');
+        navigate('/login');
       }, 5000);
     }
-  }, [setToken, history]);
+  }, [setToken, navigate]);
 
   useEffect(() => {
     document.body.className = theme;
@@ -193,69 +277,21 @@ const Dashboard = ({ token, setToken }) => {
       fetchPools();
     } else {
       setError('No token found. Redirecting to login...');
+      toast.error('No token found. Redirecting to login...');
       setTimeout(() => {
         localStorage.removeItem('userData');
-        history.push('/login');
+        navigate('/login');
       }, 5000);
     }
-
-    socket.on('connect', () => {
-      console.log('[Socket.IO] Connected to server');
-      if (user?._id) {
-        socket.emit('joinRoom', user._id.toString());
-        pools.forEach((pool) => {
-          socket.emit('joinRoom', pool._id.toString());
-        });
-      }
-    });
-
-    socket.on('connect_error', (err) => {
-      console.error('[Socket.IO] Connection error:', err.message);
-      setError('Failed to connect to server. Please ensure the backend is running.');
-    });
-
-    socket.on('balanceUpdate', ({ currency, balance }) => {
-      console.log('[Socket.IO] Balance update received:', { currency, balance });
-      setUser((prev) => {
-        const updated = {
-          ...prev,
-          balances: { ...prev.balances, [currency]: balance },
-        };
-        localStorage.setItem('userData', JSON.stringify(updated));
-        return updated;
-      });
-    });
-
-    socket.on('pointsUpdate', ({ stardustPoints }) => {
-      console.log('[Socket.IO] Points update received:', stardustPoints);
-      setUser((prev) => {
-        const updated = { ...prev, stardustPoints };
-        localStorage.setItem('userData', JSON.stringify(updated));
-        return updated;
-      });
-    });
-
-    socket.on('poolUpdate', ({ poolId, currentAmount, status }) => {
-      console.log('[Socket.IO] Pool update received:', { poolId, currentAmount, status });
-      setPools((prev) =>
-        prev.map((p) => (p._id === poolId ? { ...p, currentAmount, status } : p))
-      );
-    });
-
-    return () => {
-      socket.off('connect');
-      socket.off('connect_error');
-      socket.off('balanceUpdate');
-      socket.off('pointsUpdate');
-      socket.off('poolUpdate');
-    };
-  }, [theme, token, user?._id, pools]);
+  }, [theme, token, fetchUser, fetchPools]);
 
   const handleLogout = () => {
     setToken('');
     localStorage.removeItem('token');
     localStorage.removeItem('userData');
-    history.push('/login');
+    if (socketRef.current) socketRef.current.disconnect();
+    navigate('/login');
+    toast.info('Logged out successfully.');
   };
 
   const handleRetry = () => {
@@ -271,6 +307,7 @@ const Dashboard = ({ token, setToken }) => {
       const parsedAmount = parseFloat(deposit.amount);
       if (isNaN(parsedAmount) || parsedAmount <= 0) {
         setError('Amount must be a positive number');
+        toast.error('Amount must be a positive number');
         setTimeout(() => setError(''), 10000);
         return;
       }
@@ -280,13 +317,17 @@ const Dashboard = ({ token, setToken }) => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setNotifications([...notifications, res.data.message]);
+      toast.success(res.data.message);
       await fetchUser();
       setDeposit({ amount: '', currency: 'USD' });
     } catch (err) {
+      console.error('[handleDeposit] Error:', err.message, err.response?.data);
       if (err.response?.status === 401) {
         await refreshToken();
       } else {
-        setError(err.response?.data?.message || 'Failed to deposit');
+        const errorMessage = err.response?.data?.message || 'Failed to deposit';
+        setError(errorMessage);
+        toast.error(errorMessage);
         setTimeout(() => setError(''), 10000);
       }
     }
@@ -298,6 +339,7 @@ const Dashboard = ({ token, setToken }) => {
       const parsedAmount = parseFloat(withdraw.amount);
       if (isNaN(parsedAmount) || parsedAmount <= 0) {
         setError('Amount must be a positive number');
+        toast.error('Amount must be a positive number');
         setTimeout(() => setError(''), 10000);
         return;
       }
@@ -307,13 +349,17 @@ const Dashboard = ({ token, setToken }) => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setNotifications([...notifications, res.data.message]);
+      toast.success(res.data.message);
       await fetchUser();
       setWithdraw({ amount: '', currency: 'USD' });
     } catch (err) {
+      console.error('[handleWithdraw] Error:', err.message, err.response?.data);
       if (err.response?.status === 401) {
         await refreshToken();
       } else {
-        setError(err.response?.data?.message || 'Failed to withdraw');
+        const errorMessage = err.response?.data?.message || 'Failed to withdraw';
+        setError(errorMessage);
+        toast.error(errorMessage);
         setTimeout(() => setError(''), 10000);
       }
     }
@@ -322,6 +368,7 @@ const Dashboard = ({ token, setToken }) => {
   const handleVerifyRecipient = async () => {
     if (!send.recipient) {
       setError('Please enter a recipient wallet ID');
+      toast.error('Please enter a recipient wallet ID');
       setTimeout(() => setError(''), 10000);
       return;
     }
@@ -333,11 +380,15 @@ const Dashboard = ({ token, setToken }) => {
       setRecipientDetails(res.data);
       setShowConfirm(true);
       setError('');
+      toast.info('Recipient verified.');
     } catch (err) {
+      console.error('[handleVerifyRecipient] Error:', err.message, err.response?.data);
       if (err.response?.status === 401) {
         await refreshToken();
       } else {
-        setError(err.response?.data?.message || 'Failed to verify recipient');
+        const errorMessage = err.response?.data?.message || 'Failed to verify recipient';
+        setError(errorMessage);
+        toast.error(errorMessage);
         setRecipientDetails(null);
         setShowConfirm(false);
         setTimeout(() => setError(''), 10000);
@@ -349,6 +400,7 @@ const Dashboard = ({ token, setToken }) => {
     e.preventDefault();
     if (!send.amount || !send.recipient || !recipientDetails) {
       setError('Please verify the recipient before sending');
+      toast.error('Please verify the recipient before sending');
       setTimeout(() => setError(''), 10000);
       return;
     }
@@ -356,6 +408,7 @@ const Dashboard = ({ token, setToken }) => {
       const parsedAmount = parseFloat(send.amount);
       if (isNaN(parsedAmount) || parsedAmount <= 0) {
         setError('Amount must be a positive number');
+        toast.error('Amount must be a positive number');
         setTimeout(() => setError(''), 10000);
         return;
       }
@@ -370,6 +423,7 @@ const Dashboard = ({ token, setToken }) => {
         headers: { Authorization: `Bearer ${token}` },
       });
       setNotifications([...notifications, res.data.message]);
+      toast.success(res.data.message);
       await fetchUser();
       setSend({
         amount: '',
@@ -381,10 +435,13 @@ const Dashboard = ({ token, setToken }) => {
       setRecipientDetails(null);
       setShowConfirm(false);
     } catch (err) {
+      console.error('[handleSend] Error:', err.message, err.response?.data);
       if (err.response?.status === 401) {
         await refreshToken();
       } else {
-        setError(err.response?.data?.message || 'Failed to send');
+        const errorMessage = err.response?.data?.message || 'Failed to send';
+        setError(errorMessage);
+        toast.error(errorMessage);
         setTimeout(() => setError(''), 10000);
       }
     }
@@ -396,6 +453,7 @@ const Dashboard = ({ token, setToken }) => {
       const parsedAmount = parseFloat(savings.amount);
       if (isNaN(parsedAmount) || parsedAmount <= 0) {
         setError('Amount must be a positive number');
+        toast.error('Amount must be a positive number');
         setTimeout(() => setError(''), 10000);
         return;
       }
@@ -405,13 +463,17 @@ const Dashboard = ({ token, setToken }) => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setNotifications([...notifications, res.data.message]);
+      toast.success(res.data.message);
       await fetchUser();
       setSavings({ name: '', amount: '', currency: 'USD', type: 'accessible' });
     } catch (err) {
+      console.error('[handleSavings] Error:', err.message, err.response?.data);
       if (err.response?.status === 401) {
         await refreshToken();
       } else {
-        setError(err.response?.data?.message || 'Failed to create savings');
+        const errorMessage = err.response?.data?.message || 'Failed to create savings';
+        setError(errorMessage);
+        toast.error(errorMessage);
         setTimeout(() => setError(''), 10000);
       }
     }
@@ -423,6 +485,7 @@ const Dashboard = ({ token, setToken }) => {
       const parsedAmount = parseFloat(investment.amount);
       if (isNaN(parsedAmount) || parsedAmount <= 0) {
         setError('Amount must be a positive number');
+        toast.error('Amount must be a positive number');
         setTimeout(() => setError(''), 10000);
         return;
       }
@@ -432,13 +495,17 @@ const Dashboard = ({ token, setToken }) => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setNotifications([...notifications, res.data.message]);
+      toast.success(res.data.message);
       await fetchUser();
       setInvestment({ name: '', amount: '', currency: 'USD', type: 'basic' });
     } catch (err) {
+      console.error('[handleInvestment] Error:', err.message, err.response?.data);
       if (err.response?.status === 401) {
         await refreshToken();
       } else {
-        setError(err.response?.data?.message || 'Failed to create investment');
+        const errorMessage = err.response?.data?.message || 'Failed to create investment';
+        setError(errorMessage);
+        toast.error(errorMessage);
         setTimeout(() => setError(''), 10000);
       }
     }
@@ -450,6 +517,7 @@ const Dashboard = ({ token, setToken }) => {
       const parsedPoints = parseFloat(redeem.points);
       if (isNaN(parsedPoints) || parsedPoints <= 0) {
         setError('Points must be a positive number');
+        toast.error('Points must be a positive number');
         setTimeout(() => setError(''), 10000);
         return;
       }
@@ -459,13 +527,17 @@ const Dashboard = ({ token, setToken }) => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setNotifications([...notifications, res.data.message]);
+      toast.success(res.data.message);
       await fetchUser();
       setRedeem({ points: '' });
     } catch (err) {
+      console.error('[handleRedeem] Error:', err.message, err.response?.data);
       if (err.response?.status === 401) {
         await refreshToken();
       } else {
-        setError(err.response?.data?.message || 'Failed to redeem');
+        const errorMessage = err.response?.data?.message || 'Failed to redeem';
+        setError(errorMessage);
+        toast.error(errorMessage);
         setTimeout(() => setError(''), 10000);
       }
     }
@@ -477,6 +549,7 @@ const Dashboard = ({ token, setToken }) => {
       const parsedAmount = parseFloat(poolContribution.amount);
       if (isNaN(parsedAmount) || parsedAmount < 1) {
         setError('Contribution amount must be at least 1');
+        toast.error('Contribution amount must be at least 1');
         setTimeout(() => setError(''), 10000);
         return;
       }
@@ -490,14 +563,18 @@ const Dashboard = ({ token, setToken }) => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setNotifications([...notifications, res.data.message]);
+      toast.success(res.data.message);
       await fetchPools();
       await fetchUser();
       setPoolContribution({ poolId: '', amount: '', currency: 'USD' });
     } catch (err) {
+      console.error('[handleContributePool] Error:', err.message, err.response?.data);
       if (err.response?.status === 401) {
         await refreshToken();
       } else {
-        setError(err.response?.data?.message || 'Failed to contribute to pool');
+        const errorMessage = err.response?.data?.message || 'Failed to contribute to pool';
+        setError(errorMessage);
+        toast.error(errorMessage);
         setTimeout(() => setError(''), 10000);
       }
     }
@@ -509,8 +586,12 @@ const Dashboard = ({ token, setToken }) => {
         headers: { Authorization: `Bearer ${token}` },
       });
       setLeaderboard(res.data);
+      toast.info('Leaderboard fetched.');
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to fetch leaderboard');
+      console.error('[handleFetchLeaderboard] Error:', err.message, err.response?.data);
+      const errorMessage = err.response?.data?.message || 'Failed to fetch leaderboard';
+      setError(errorMessage);
+      toast.error(errorMessage);
       setTimeout(() => setError(''), 10000);
     }
   };
@@ -523,13 +604,17 @@ const Dashboard = ({ token, setToken }) => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setNotifications([...notifications, res.data.message]);
+      toast.success(res.data.message);
       await fetchPools();
       await fetchUser();
     } catch (err) {
+      console.error('[handleReleasePool] Error:', err.message, err.response?.data);
       if (err.response?.status === 401) {
         await refreshToken();
       } else {
-        setError(err.response?.data?.message || 'Failed to release pool funds');
+        const errorMessage = err.response?.data?.message || 'Failed to release pool funds';
+        setError(errorMessage);
+        toast.error(errorMessage);
         setTimeout(() => setError(''), 10000);
       }
     }
@@ -615,7 +700,7 @@ const Dashboard = ({ token, setToken }) => {
             <h2>Funding Pools</h2>
             <div className="pool-actions">
               <motion.button
-                onClick={() => history.push('/create-pool')}
+                onClick={() => navigate('/create-pool')}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 className="create-pool-btn"
@@ -623,13 +708,23 @@ const Dashboard = ({ token, setToken }) => {
                 <IoPeople /> Create New Pool
               </motion.button>
               <motion.button
-                onClick={() => history.push('/pools')}
+                onClick={() => navigate('/pools')}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 className="view-pools-btn"
               >
                 View All Pools
               </motion.button>
+              {user.isAdmin && (
+                <motion.button
+                  onClick={() => navigate('/admin/withdrawals')}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="admin-btn"
+                >
+                  Admin Panel
+                </motion.button>
+              )}
             </div>
             {pools.length === 0 ? (
               <p>No funding pools available. Create one to get started!</p>
@@ -638,12 +733,17 @@ const Dashboard = ({ token, setToken }) => {
                 {pools.map((p) => (
                   <div key={p._id} className="card">
                     <h5>{p.name}</h5>
-                    <p>{p.description}</p>
-                    <p>Goal: {p.goalAmount} {p.currency}</p>
-                    <p>Raised: {p.currentAmount} {p.currency}</p>
+                    <p>Wallet ID: {p.creator?.walletId || 'Unknown'}</p>
+                    <p>Initiative: {p.description}</p>
+                    <p>Target: {p.goalAmount} {p.currency}</p>
+                    <p>Collected: {p.currentAmount} {p.currency}</p>
                     <p>Deadline: {new Date(p.deadline).toLocaleString()}</p>
                     <p>Status: {p.status}</p>
                     <p>Creator: {p.creator?.username || 'Unknown'}</p>
+                    <div className="transactions">
+                      <h6>Recent Transactions</h6>
+                      <TransactionList poolId={p._id} />
+                    </div>
                     <QRCodeCanvas
                       value={`http://localhost:3000/pool/${p._id}`}
                       size={64}
@@ -655,6 +755,15 @@ const Dashboard = ({ token, setToken }) => {
                     >
                       View Leaderboard
                     </motion.button>
+                    {p.signatories?.some((s) => s.user?.walletId === user.walletId) && (
+                      <motion.button
+                        onClick={() => navigate(`/pool/${p._id}`)}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        Manage Withdrawal
+                      </motion.button>
+                    )}
                     {p.creator?._id === user._id && p.status === 'completed' && (
                       <motion.button
                         onClick={() => handleReleasePool(p._id)}
@@ -1002,6 +1111,70 @@ const Dashboard = ({ token, setToken }) => {
           </div>
         </motion.div>
       )}
+    </div>
+  );
+};
+
+const TransactionList = ({ poolId }) => {
+  const [transactions, setTransactions] = useState([]);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      try {
+        setLoading(true);
+        const token = localStorage.getItem('token');
+        const res = await axios.get(
+          `http://localhost:5000/api/pools/transactions/${poolId}?page=${page}&limit=5`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setTransactions(res.data.transactions);
+        setTotalPages(res.data.totalPages);
+      } catch (err) {
+        console.error('[TransactionList] Error:', err.message, err.response?.data);
+        toast.error(err.response?.data?.message || 'Failed to load transactions.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchTransactions();
+  }, [poolId, page]);
+
+  return (
+    <div>
+      {loading ? (
+        <p>Loading transactions...</p>
+      ) : transactions.length > 0 ? (
+        <ul>
+          {transactions.map((tx) => (
+            <li key={tx._id}>
+              {tx.type}: {tx.amount} {tx.currency} by {tx.user?.username || 'Unknown'} on{' '}
+              {new Date(tx.date).toLocaleString()}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p>No transactions yet.</p>
+      )}
+      <div className="pagination">
+        <button
+          onClick={() => setPage((p) => Math.max(p - 1, 1))}
+          disabled={page === 1 || loading}
+        >
+          Previous
+        </button>
+        <span>
+          Page {page} of {totalPages}
+        </span>
+        <button
+          onClick={() => setPage((p) => (p < totalPages ? p + 1 : p))}
+          disabled={page === totalPages || loading}
+        >
+          Next
+        </button>
+      </div>
     </div>
   );
 };

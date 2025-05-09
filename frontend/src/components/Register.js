@@ -1,22 +1,21 @@
 import { useState, useRef, useEffect } from 'react';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { motion } from 'framer-motion';
+import { toast } from 'react-toastify';
 import '../App.css';
 
 function Register({ setToken }) {
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [idType, setIdType] = useState('national_id');
-  const [idNumber, setIdNumber] = useState('');
   const [selfie, setSelfie] = useState(null);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [stream, setStream] = useState(null);
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
-  const history = useHistory();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const startCamera = async () => {
@@ -54,13 +53,10 @@ function Register({ setToken }) {
     setLoading(true);
     setErrors({});
 
-    // Client-side validation
     const newErrors = {};
     if (!email) newErrors.email = 'Email is required';
-    if (!username) newErrors.username = 'Full name from ID is required';
+    if (!username) newErrors.username = 'Full name is required';
     if (!password) newErrors.password = 'Password is required';
-    if (!idType) newErrors.idType = 'ID type is required';
-    if (!idNumber) newErrors.idNumber = 'ID number is required';
     if (!selfie) newErrors.selfie = 'Selfie is required';
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -68,39 +64,59 @@ function Register({ setToken }) {
       return;
     }
 
-    console.log('Register - Password state before FormData:', password);
-
+    console.log('[Register] Preparing FormData', { email, username });
     const formData = new FormData();
     formData.append('email', email);
     formData.append('username', username);
     formData.append('password', password);
-    formData.append('idType', idType);
-    formData.append('idNumber', idNumber);
     formData.append('selfie', selfie, 'selfie.jpg');
 
-    console.log('Register - FormData contents:');
+    console.log('[Register] FormData contents:');
     for (let [key, value] of formData.entries()) {
       console.log(`  ${key}:`, value);
     }
 
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        console.log('[Register] Request timed out after 15s');
+        controller.abort();
+      }, 15000);
+
+      console.log('[Register] Sending request to /api/auth/register');
       const res = await axios.post('http://localhost:5000/api/auth/register', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
+
+      console.log('[Register] Response received:', res.data);
       setToken(res.data.token);
       localStorage.setItem('token', res.data.token);
-      history.push('/');
+      toast.success('Registration successful!');
+      navigate('/');
     } catch (err) {
-      const errorDetails = {
+      console.error('[Register] Error:', {
+        message: err.message || 'No message provided',
+        name: err.name,
+        code: err.code,
         status: err.response?.status,
-        data: err.response?.data,
-        message: err.message,
+        responseData: err.response?.data,
+        headers: err.response?.headers,
         stack: err.stack,
-      };
-      console.error('Register - Error:', errorDetails);
-      setErrors({
-        server: err.response?.data?.message || `Failed to register: ${err.message}`,
       });
+      let errorMessage = 'Failed to register. Please try again.';
+      if (err.name === 'AbortError') {
+        errorMessage = 'Registration timed out after 15s. Check if backend is running at http://localhost:5000.';
+      } else if (err.code === 'ERR_NETWORK') {
+        errorMessage = 'Network error: Cannot reach backend. Ensure http://localhost:5000 is accessible.';
+      } else if (err.response) {
+        errorMessage = err.response.data?.message || `Server error: ${err.response.status}`;
+      } else {
+        errorMessage = `Unexpected error: ${err.message || 'Unknown'}`;
+      }
+      setErrors({ server: errorMessage });
+      toast.error(errorMessage);
       setTimeout(() => setErrors({}), 5000);
     } finally {
       setLoading(false);
@@ -136,7 +152,7 @@ function Register({ setToken }) {
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="Full Name (as on ID)"
+              placeholder="Full Name"
               required
               disabled={loading}
               aria-label="Full Name"
@@ -146,7 +162,7 @@ function Register({ setToken }) {
               type="password"
               value={password}
               onChange={(e) => {
-                console.log('Password input changed:', e.target.value);
+                console.log('[Register] Password input changed:', e.target.value);
                 setPassword(e.target.value);
               }}
               placeholder="Password"
@@ -155,28 +171,6 @@ function Register({ setToken }) {
               aria-label="Password"
             />
             {errors.password && <p className="error">{errors.password}</p>}
-            <select
-              value={idType}
-              onChange={(e) => setIdType(e.target.value)}
-              required
-              disabled={loading}
-              aria-label="ID Type"
-            >
-              <option value="national_id">National ID (Uganda)</option>
-              <option value="driving_license">Driving License</option>
-              <option value="passport">Passport (Foreigners)</option>
-            </select>
-            {errors.idType && <p className="error">{errors.idType}</p>}
-            <input
-              type="text"
-              value={idNumber}
-              onChange={(e) => setIdNumber(e.target.value)}
-              placeholder="ID Number"
-              required
-              disabled={loading}
-              aria-label="ID Number"
-            />
-            {errors.idNumber && <p className="error">{errors.idNumber}</p>}
             <div className="selfie-capture">
               <video ref={videoRef} autoPlay width="320" height="240" />
               <canvas ref={canvasRef} width="320" height="240" style={{ display: 'none' }} />

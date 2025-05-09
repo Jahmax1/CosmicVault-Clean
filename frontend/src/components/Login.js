@@ -1,24 +1,22 @@
-// C:\Users\HP\CosmicVault-New\frontend\src\components\Login.js
 import { useState } from 'react';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { motion } from 'framer-motion';
+import { toast } from 'react-toastify';
 import '../App.css';
 
 function Login({ setToken }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [twoFactorCode, setTwoFactorCode] = useState('');
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
-  const history = useHistory();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setErrors({});
 
-    // Client-side validation
     const newErrors = {};
     if (!email) newErrors.email = 'Email is required';
     if (!password) newErrors.password = 'Password is required';
@@ -29,20 +27,47 @@ function Login({ setToken }) {
     }
 
     try {
-      const res = await axios.post('http://localhost:5000/api/auth/login', {
-        email,
-        password,
-        twoFactorCode,
-      });
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        console.log('[Login] Request timed out after 15s');
+        controller.abort();
+      }, 15000);
+
+      console.log('[Login] Sending request to /api/auth/login', { email });
+      const res = await axios.post(
+        'http://localhost:5000/api/auth/login',
+        { email, password },
+        { signal: controller.signal }
+      );
+      clearTimeout(timeoutId);
+
+      console.log('[Login] Response received:', res.data);
       setToken(res.data.token);
       localStorage.setItem('token', res.data.token);
-      console.log('Login - Login successful, redirecting to /');
-      history.push('/');
+      toast.success('Login successful!');
+      navigate('/');
     } catch (err) {
-      console.error('Login - Error:', err.response?.data, err.message);
-      setErrors({
-        server: err.response?.data?.message || 'Failed to log in. Please try again.',
+      console.error('[Login] Error:', {
+        message: err.message || 'No message provided',
+        name: err.name,
+        code: err.code,
+        status: err.response?.status,
+        responseData: err.response?.data,
+        headers: err.response?.headers,
+        stack: err.stack,
       });
+      let errorMessage = 'Failed to log in. Please try again.';
+      if (err.name === 'AbortError') {
+        errorMessage = 'Login timed out after 15s. Check if backend is running at http://localhost:5000.';
+      } else if (err.code === 'ERR_NETWORK') {
+        errorMessage = 'Network error: Cannot reach backend. Ensure http://localhost:5000 is accessible.';
+      } else if (err.response) {
+        errorMessage = err.response.data?.message || `Server error: ${err.response.status}`;
+      } else {
+        errorMessage = `Unexpected error: ${err.message || 'Unknown'}`;
+      }
+      setErrors({ server: errorMessage });
+      toast.error(errorMessage);
       setTimeout(() => setErrors({}), 5000);
     } finally {
       setLoading(false);
@@ -84,14 +109,6 @@ function Login({ setToken }) {
               aria-label="Password"
             />
             {errors.password && <p className="error">{errors.password}</p>}
-            <input
-              type="text"
-              value={twoFactorCode}
-              onChange={(e) => setTwoFactorCode(e.target.value)}
-              placeholder="2FA Code (if enabled)"
-              disabled={loading}
-              aria-label="2FA Code"
-            />
             <motion.button
               type="submit"
               disabled={loading}
