@@ -1,17 +1,8 @@
-/* C:\Users\HP\CosmicVault-New\frontend\src\Dashboard.css */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
 .dashboard {
-  font-family: 'Poppins', sans-serif;
-  background: #1a1a2e;
-  color: #fff;
   min-height: 100vh;
-  padding: 1rem;
   position: relative;
+  padding: 1rem;
+  background: linear-gradient(to bottom right, #0a0a23, #1a1a2e);
 }
 
 .stars-background {
@@ -29,10 +20,20 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
+  padding: 1rem 2rem;
+  background: rgba(26, 26, 46, 0.9);
+  border-radius: 12px;
+  margin-bottom: 2rem;
+  border: 1px solid rgba(78, 205, 196, 0.3);
+}
+
+body.light .dashboard-header {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(69, 183, 170, 0.3);
 }
 
 .dashboard-header h1 {
+  color: #ffd700;
   font-size: 1.8rem;
   background: linear-gradient(45deg, #ffd700, #ff00ff);
   -webkit-background-clip: text;
@@ -40,162 +41,306 @@
   color: transparent;
 }
 
-.header-actions {
-  display: flex;
-  gap: 1rem;
+body.light .dashboard-header h1 {
+  color: #333;
+  background: none;
+  -webkit-background-clip: initial;
+  background-clip: initial;
 }
 
 .header-actions button {
-  padding: 0.5rem 1rem;
+  background: none;
   border: none;
-  border-radius: 0.5rem;
-  background: linear-gradient(45deg, #ffd700, #ff00ff);
-  color: #1a1a2e;
+  color: #fff;
+  font-size: 1.2rem;
+  margin-left: 1rem;
   cursor: pointer;
-  font-family: 'Poppins', sans-serif;
+  transition: color 0.3s;
+}
+
+body.light .header-actions button {
+  color: #333;
 }
 
 .header-actions button:hover {
-  background: linear-gradient(45deg, #ff00ff, #ffd700);
+  color: #ffd700;
 }
 
-.error {
-  color: #ff6b6b;
-  background: rgba(255, 107, 107, 0.2);
-  padding: 0.75rem;
-  border-radius: 8px;
-  margin: 0.5rem 0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.error button {
-  background: #555;
-  color: #fff;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-}
-
-.notification {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  background: rgba(78, 205, 196, 0.9);
-  color: #fff;
-  padding: 0.75rem 1.5rem;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  z-index: 1000;
+body.light .header-actions button:hover {
+  color: #45b7aa;
 }
 
 .dashboard-content {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.balances, .referral, .pools, .forms, .chart, .savings, .investments, .transactions {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  padding: 1.5rem;
-  border-radius: 1rem;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-}
-
-.balances h2, .referral h2, .pools h2, .forms h2, .chart h2, .savings h2, .investments h2, .transactions h2 {
-  font-size: 1.5rem;
-  margin-bottom: 1rem;
-  color: #ffd700;
-}
-
-.pool-actions {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
-
-.create-pool-btn, .view-pools-btn {
-  padding: 0.75rem;
-  border: none;
-  border-radius: 0.5rem;
-  background: linear-gradient(45deg, #ffd700, #ff00ff);
-  color: #1a1a2e;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.create-pool-btn:hover, .view-pools-btn:hover {
-  background: linear-gradient(45deg, #ff00ff, #ffd700);
-}
-
-.grid {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  min-height: 100vh;
+  padding-bottom: 2rem;
 }
 
-.card {
-  background: rgba(255, 255, 255, 0.1);
-  padding: 1rem;
-  border-radius: 0.5rem;
+.balances,
+.referral,
+.forms,
+.chart,
+.savings,
+.investments,
+.transactions,
+.pools {
+  background: rgba(26, 26, 46, 0.9);
+  border-radius: 12px;
+  padding: 1.5rem;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(78, 205, 196, 0.3);
 }
 
-.card h5 {
-  font-size: 1.2rem;
+body.light .balances,
+body.light .referral,
+body.light .forms,
+body.light .chart,
+body.light .savings,
+body.light .investments,
+body.light .transactions,
+body.light .pools {
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(69, 183, 170, 0.3);
+}
+
+.balances h2,
+.referral h2,
+.forms h2,
+.chart h2,
+.savings h2,
+.investments h2,
+.transactions h2,
+.pools h2 {
   color: #ffd700;
-  margin-bottom: 0.5rem;
+  margin-bottom: 1rem;
 }
 
-.card p {
-  font-size: 0.9rem;
-  margin: 0.25rem 0;
+body.light .balances h2,
+body.light .referral h2,
+body.light .forms h2,
+body.light .chart h2,
+body.light .savings h2,
+body.light .investments h2,
+body.light .transactions h2,
+body.light .pools h2 {
+  color: #333;
+}
+
+.balances p,
+.referral p,
+.savings p,
+.investments p,
+.transactions p,
+.pools p {
+  color: #e0e0e0;
+  font-size: 1rem;
+}
+
+body.light .balances p,
+body.light .referral p,
+body.light .savings p,
+body.light .investments p,
+body.light .transactions p,
+body.light .pools p {
+  color: #555;
 }
 
 .forms form {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  margin-bottom: 1.5rem;
 }
 
 .forms h3 {
-  font-size: 1.2rem;
   color: #ffd700;
+  font-size: 1.2rem;
   margin-bottom: 0.5rem;
 }
 
-.forms input, .forms select {
-  padding: 0.75rem;
-  border: none;
-  border-radius: 0.5rem;
-  background: rgba(255, 255, 255, 0.2);
+body.light .forms h3 {
+  color: #333;
+}
+
+.forms input,
+.forms select,
+.forms button,
+.forms textarea {
+  padding: 0.8rem;
+  border-radius: 8px;
+  border: 1px solid rgba(78, 205, 196, 0.5);
+  background: rgba(255, 255, 255, 0.1);
   color: #fff;
   font-size: 1rem;
 }
 
-.forms input::placeholder {
-  color: rgba(255, 255, 255, 0.7);
+body.light .forms input,
+body.light .forms select,
+body.light .forms button,
+body.light .forms textarea {
+  border: 1px solid rgba(69, 183, 170, 0.5);
+  background: #f5f5f5;
+  color: #333;
 }
 
 .forms button {
-  padding: 0.75rem;
+  background: #45b7aa;
   border: none;
-  border-radius: 0.5rem;
-  background: linear-gradient(45deg, #ffd700, #ff00ff);
-  color: #1a1a2e;
   cursor: pointer;
+  transition: background 0.3s;
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 0.5rem;
 }
 
 .forms button:hover {
-  background: linear-gradient(45deg, #ff00ff, #ffd700);
+  background: #ffd700;
+}
+
+body.light .forms button {
+  background: #45b7aa;
+}
+
+body.light .forms button:hover {
+  background: #333;
+  color: #fff;
+}
+
+.chart canvas {
+  max-width: 100%;
+}
+
+.transactions .space-y-4 > div {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 1rem;
+  border-radius: 8px;
+}
+
+body.light .transactions .space-y-4 > div {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.transactions p {
+  margin: 0.5rem 0;
+}
+
+.savings .grid,
+.investments .grid,
+.pools .grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.card {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid rgba(78, 205, 196, 0.2);
+}
+
+body.light .card {
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(69, 183, 170, 0.2);
+}
+
+.card h5 {
+  color: #ffd700;
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+}
+
+body.light .card h5 {
+  color: #333;
+}
+
+.card.basic { border-color: #ffd700; }
+.card.gold { border-color: #ffaa00; }
+.card.platinum { border-color: #cccccc; }
+
+.pools .card {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid rgba(78, 205, 196, 0.2);
+}
+
+body.light .pools .card {
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(69, 183, 170, 0.2);
+}
+
+.pools .card h5 {
+  color: #ffd700;
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+}
+
+body.light .pools .card h5 {
+  color: #333;
+}
+
+.pools .card p {
+  margin: 0.25rem 0;
+  color: #e0e0e0;
+}
+
+body.light .pools .card p {
+  color: #555;
+}
+
+.pools .card button {
+  margin-top: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: #45b7aa;
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.pools .card button:hover {
+  background: #ffd700;
+}
+
+body.light .pools .card button:hover {
+  background: #333;
+}
+
+.flex {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.notification {
+  background: rgba(69, 183, 170, 0.9);
+  color: #fff;
+  padding: 0.8rem;
+  border-radius: 8px;
+  margin: 0.5rem 0;
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 1000;
+}
+
+body.light .notification {
+  background: rgba(69, 183, 170, 0.7);
+  color: #333;
+}
+
+.error {
+  color: #ff4d4d;
+  font-size: 0.9rem;
+  margin: 0.5rem 0;
+}
+
+body.light .error {
+  color: #d32f2f;
 }
 
 .modal {
@@ -204,111 +349,138 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.7);
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
   z-index: 1000;
 }
 
 .modal-content {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
+  background: rgba(26, 26, 46, 0.9);
   padding: 2rem;
-  border-radius: 1rem;
-  text-align: center;
-  color: #fff;
+  border-radius: 12px;
+  border: 1px solid rgba(78, 205, 196, 0.3);
+  max-width: 500px;
+  width: 90%;
+}
+
+body.light .modal-content {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(69, 183, 170, 0.3);
+}
+
+.modal-content h3 {
+  color: #ffd700;
+  margin-bottom: 1rem;
+}
+
+body.light .modal-content h3 {
+  color: #333;
+}
+
+.modal-content p {
+  color: #e0e0e0;
+  margin-bottom: 1rem;
+}
+
+body.light .modal-content p {
+  color: #555;
+}
+
+.modal-content img {
+  max-width: 100%;
+  border-radius: 8px;
+  margin-bottom: 1rem;
 }
 
 .modal-actions {
   display: flex;
   gap: 1rem;
-  justify-content: center;
-  margin-top: 1rem;
 }
 
 .modal-actions button {
-  padding: 0.75rem;
+  padding: 0.8rem 1.5rem;
+  border-radius: 8px;
   border: none;
-  border-radius: 0.5rem;
   cursor: pointer;
+  transition: background 0.3s;
 }
 
 .modal-actions button:first-child {
-  background: #555;
+  background: #ff4d4d;
   color: #fff;
+}
+
+.modal-actions button:first-child:hover {
+  background: #d32f2f;
 }
 
 .modal-actions button:last-child {
-  background: linear-gradient(45deg, #ffd700, #ff00ff);
-  color: #1a1a2e;
+  background: #45b7aa;
+  color: #fff;
 }
 
-.leaderboard, .pagination {
+.modal-actions button:last-child:hover {
+  background: #ffd700;
+}
+
+body.light .modal-actions button:last-child:hover {
+  background: #333;
+}
+
+.leaderboard {
   margin-top: 1rem;
 }
 
-.leaderboard h3 {
-  font-size: 1.2rem;
-  color: #ffd700;
+.leaderboard ul {
+  list-style: none;
+  padding: 0;
 }
 
-.pagination {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.leaderboard li {
+  margin: 0.5rem 0;
 }
 
-.pagination button {
-  padding: 0.5rem 1rem;
+.create-pool-btn,
+.view-pools-btn {
+  display: inline-flex;
+  padding: 12px 24px;
+  margin: 10px 10px 10px 0;
+  background-color: #ffd700;
+  color: #000;
   border: none;
-  border-radius: 0.5rem;
-  background: #555;
-  color: #fff;
+  border-radius: 5px;
   cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  animation: pulse 2s infinite;
 }
 
-.pagination button:disabled {
-  background: #333;
-  cursor: not-allowed;
+.create-pool-btn:hover,
+.view-pools-btn:hover {
+  background-color: #ffeb3b;
+  transform: translateY(-2px);
 }
 
-/* Responsive Styles */
-@media (min-width: 640px) {
-  .dashboard {
-    padding: 2rem;
-  }
-  .grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  .dashboard-header h1 {
-    font-size: 2rem;
-  }
+.pool-actions {
+  margin-bottom: 20px;
 }
 
-@media (min-width: 1024px) {
-  .grid {
-    grid-template-columns: repeat(3, 1fr);
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7);
   }
-  .forms {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1.5rem;
+  70% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 10px rgba(255, 215, 0, 0);
   }
-}
-
-@media (max-width: 480px) {
-  .dashboard {
-    padding: 0.5rem;
-  }
-  .dashboard-header h1 {
-    font-size: 1.5rem;
-  }
-  .forms form {
-    gap: 0.75rem;
-  }
-  .forms input, .forms select, .forms button {
-    font-size: 0.9rem;
-    padding: 0.5rem;
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(255, 215, 0, 0);
   }
 }
