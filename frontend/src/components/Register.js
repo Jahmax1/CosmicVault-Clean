@@ -5,6 +5,9 @@ import { motion } from 'framer-motion';
 import { toast } from 'react-toastify';
 import '../App.css';
 
+// Debug component mount
+console.log('Register component loaded');
+
 function Register({ setToken }) {
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
@@ -13,38 +16,106 @@ function Register({ setToken }) {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [stream, setStream] = useState(null);
+  const [cameraInitialized, setCameraInitialized] = useState(false);
+  const [cameraError, setCameraError] = useState(null);
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const startCamera = async () => {
-      try {
-        const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
-        setStream(mediaStream);
-        if (videoRef.current) {
-          videoRef.current.srcObject = mediaStream;
-        }
-      } catch (err) {
-        setErrors({ selfie: 'Failed to access camera. Please allow camera access.' });
+  // Check if camera is available
+  const checkCameraAvailability = async () => {
+    try {
+      console.log('[Register] Checking available media devices');
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoDevices = devices.filter(device => device.kind === 'videoinput');
+      console.log('[Register] Available video devices:', videoDevices);
+      return videoDevices.length > 0;
+    } catch (err) {
+      console.error('[Register] Error checking media devices:', err);
+      return false;
+    }
+  };
+
+  // Initialize camera stream
+  const initializeCamera = async () => {
+    try {
+      console.log('[Register] Checking camera API support');
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('Camera API not supported in this browser');
       }
+
+      // Check if there are any cameras available
+      const hasCamera = await checkCameraAvailability();
+      if (!hasCamera) {
+        throw new Error('No camera detected on this device. You can still register without a selfie.');
+      }
+
+      console.log('[Register] Requesting camera access');
+      const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
+      console.log('[Register] Camera access granted, stream received');
+      setStream(mediaStream);
+    } catch (err) {
+      console.error('[Register] Camera access error:', err);
+      setCameraError(err.message || 'Failed to access camera. You can still register without a selfie.');
+    }
+  };
+
+  // Set up camera initialization with manual timeout
+  useEffect(() => {
+    console.log('[Register] useEffect: Initializing camera');
+    let timeoutId;
+
+    const startCamera = async () => {
+      // Set a manual timeout to catch if getUserMedia hangs
+      timeoutId = setTimeout(() => {
+        if (!stream && !cameraError) {
+          console.error('[Register] Camera initialization timed out after 5 seconds');
+          setCameraError('Camera initialization timed out after 5 seconds. You can still register without a selfie.');
+        }
+      }, 5000);
+
+      await initializeCamera();
     };
+
     startCamera();
 
     return () => {
+      clearTimeout(timeoutId);
       if (stream) {
+        console.log('[Register] Stopping camera stream');
         stream.getTracks().forEach((track) => track.stop());
       }
     };
-  }, []);
+  }, []); // Run only once on mount
+
+  // Set up video stream when videoRef is ready
+  useEffect(() => {
+    if (stream && videoRef.current) {
+      console.log('[Register] Setting video stream');
+      videoRef.current.srcObject = stream;
+      videoRef.current.onloadedmetadata = () => {
+        videoRef.current.play().catch((err) => {
+          console.error('[Register] Video play error:', err);
+          setCameraError('Failed to play video. You can still register without a selfie.');
+        });
+        setCameraInitialized(true);
+        console.log('[Register] Camera initialized successfully');
+      };
+    }
+  }, [stream]); // Run when stream is available
 
   const captureSelfie = () => {
     if (canvasRef.current && videoRef.current) {
+      console.log('[Register] Capturing selfie');
       const context = canvasRef.current.getContext('2d');
       context.drawImage(videoRef.current, 0, 0, 320, 240);
       canvasRef.current.toBlob((blob) => {
         setSelfie(blob);
+        console.log('[Register] Selfie captured:', blob);
       }, 'image/jpeg');
+    } else {
+      console.error('[Register] Cannot capture selfie: canvasRef or videoRef missing');
+      setErrors({ selfie: 'Cannot capture selfie. Camera not initialized.' });
     }
   };
 
@@ -57,7 +128,8 @@ function Register({ setToken }) {
     if (!email) newErrors.email = 'Email is required';
     if (!username) newErrors.username = 'Full name is required';
     if (!password) newErrors.password = 'Password is required';
-    if (!selfie) newErrors.selfie = 'Selfie is required';
+    // Selfie is now optional
+    // if (!selfie) newErrors.selfie = 'Selfie is required';
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       setLoading(false);
@@ -69,7 +141,9 @@ function Register({ setToken }) {
     formData.append('email', email);
     formData.append('username', username);
     formData.append('password', password);
-    formData.append('selfie', selfie, 'selfie.jpg');
+    if (selfie) {
+      formData.append('selfie', selfie, 'selfie.jpg');
+    }
 
     console.log('[Register] FormData contents:');
     for (let [key, value] of formData.entries()) {
@@ -94,7 +168,7 @@ function Register({ setToken }) {
       setToken(res.data.token);
       localStorage.setItem('token', res.data.token);
       toast.success('Registration successful!');
-      navigate('/');
+      navigate('/dashboard');
     } catch (err) {
       console.error('[Register] Error:', {
         message: err.message || 'No message provided',
@@ -122,6 +196,18 @@ function Register({ setToken }) {
       setLoading(false);
     }
   };
+
+  // Debug render
+  console.log('[Register] Rendering', {
+    email,
+    username,
+    password,
+    selfie: !!selfie,
+    errors,
+    loading,
+    cameraInitialized,
+    cameraError,
+  });
 
   return (
     <div className="auth-container">
@@ -172,21 +258,29 @@ function Register({ setToken }) {
             />
             {errors.password && <p className="error">{errors.password}</p>}
             <div className="selfie-capture">
-              <video ref={videoRef} autoPlay width="320" height="240" />
-              <canvas ref={canvasRef} width="320" height="240" style={{ display: 'none' }} />
-              <motion.button
-                type="button"
-                onClick={captureSelfie}
-                disabled={loading}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="capture-button"
-                aria-label="Capture Selfie"
-              >
-                Capture Selfie
-              </motion.button>
-              {selfie && <p className="success">Selfie captured!</p>}
-              {errors.selfie && <p className="error">{errors.selfie}</p>}
+              {cameraError ? (
+                <p className="error">{cameraError}</p>
+              ) : cameraInitialized ? (
+                <>
+                  <video ref={videoRef} width="320" height="240" />
+                  <canvas ref={canvasRef} width="320" height="240" style={{ display: 'none' }} />
+                  <motion.button
+                    type="button"
+                    onClick={captureSelfie}
+                    disabled={loading}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="capture-button"
+                    aria-label="Capture Selfie"
+                  >
+                    Capture Selfie
+                  </motion.button>
+                  {selfie && <p className="success">Selfie captured!</p>}
+                  {errors.selfie && <p className="error">{errors.selfie}</p>}
+                </>
+              ) : (
+                <p>Loading camera...</p>
+              )}
             </div>
             <motion.button
               type="submit"
@@ -201,7 +295,7 @@ function Register({ setToken }) {
         )}
         <p>
           Already have an account?{' '}
-          <a href="/login" aria-label="Login">
+          <a href="/CosmicVault-Clean/login" aria-label="Login">
             Login
           </a>
         </p>

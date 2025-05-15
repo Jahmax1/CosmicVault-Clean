@@ -5,6 +5,9 @@ import { motion } from 'framer-motion';
 import { toast } from 'react-toastify';
 import '../App.css';
 
+// Debug component mount
+console.log('Login component loaded');
+
 function Login({ setToken }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -45,7 +48,7 @@ function Login({ setToken }) {
       setToken(res.data.token);
       localStorage.setItem('token', res.data.token);
       toast.success('Login successful!');
-      navigate('/');
+      navigate('/dashboard');
     } catch (err) {
       console.error('[Login] Error:', {
         message: err.message || 'No message provided',
@@ -72,7 +75,10 @@ function Login({ setToken }) {
     } finally {
       setLoading(false);
     }
-  };
+  }
+
+  // Debug render
+  console.log('[Login] Rendering', { email, password, errors, loading });
 
   return (
     <div className="auth-container">
@@ -122,7 +128,7 @@ function Login({ setToken }) {
         )}
         <p>
           Don't have an account?{' '}
-          <a href="/register" aria-label="Register">
+          <a href="/CosmicVault-Clean/register" aria-label="Register">
             Register
           </a>
         </p>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './components/Login';
 import Register from './components/Register';
@@ -25,6 +25,11 @@ class ErrorBoundary extends React.Component {
     return { hasError: true, error };
   }
 
+  componentDidCatch(error, errorInfo) {
+    // Log error for debugging
+    console.error('ErrorBoundary caught an error:', error, errorInfo);
+  }
+
   render() {
     if (this.state.hasError) {
       return (
@@ -32,12 +37,20 @@ class ErrorBoundary extends React.Component {
           <div className="text-center">
             <h1 className="text-2xl font-bold mb-4">Something went wrong</h1>
             <p className="text-red-500 mb-4">{this.state.error?.message || 'Unknown error'}</p>
-            <button
-              onClick={() => window.location.reload()}
-              className="bg-blue-500 py-2 px-4 rounded hover:bg-blue-600"
-            >
-              Reload Page
-            </button>
+            <div className="space-x-4">
+              <button
+                onClick={() => window.location.reload()}
+                className="bg-blue-500 py-2 px-4 rounded hover:bg-blue-600"
+              >
+                Reload Page
+              </button>
+              <a
+                href="/CosmicVault-Clean"
+                className="bg-gray-500 py-2 px-4 rounded hover:bg-gray-600"
+              >
+                Go to Home
+              </a>
+            </div>
           </div>
         </div>
       );
@@ -46,10 +59,21 @@ class ErrorBoundary extends React.Component {
   }
 }
 
+// New component to handle route debugging
+const RouteDebugger = () => {
+  const location = window.location;
+  useEffect(() => {
+    console.log('Current URL:', location.pathname + location.search);
+  }, [location]);
+  return null; // This component doesn't render anything
+};
+
 const App = () => {
   const [token, setToken] = useState(localStorage.getItem('token') || '');
 
+  // Persist token to localStorage
   useEffect(() => {
+    console.log('App token updated:', token);
     if (token) {
       localStorage.setItem('token', token);
     } else {
@@ -58,17 +82,20 @@ const App = () => {
   }, [token]);
 
   const PrivateRoute = ({ children }) => {
+    console.log('PrivateRoute token:', token);
     return token ? children : <Navigate to="/login" />;
   };
 
   return (
     <ErrorBoundary>
-      <Router>
+      <Router basename="/CosmicVault-Clean">
         <Routes>
+          {/* Default route: Redirect to login if not authenticated */}
+          <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<Login setToken={setToken} />} />
           <Route path="/register" element={<Register setToken={setToken} />} />
           <Route
-            path="/"
+            path="/dashboard"
             element={
               <PrivateRoute>
                 <Dashboard token={token} setToken={setToken} />
@@ -99,7 +126,11 @@ const App = () => {
               </PrivateRoute>
             }
           />
+          {/* Catch-all route for unmatched paths */}
+          <Route path="*" element={<div className="min-h-screen flex items-center justify-center bg-gray-900 text-white">404 - Page Not Found</div>} />
         </Routes>
+        {/* Add RouteDebugger to log the current route */}
+        <RouteDebugger />
         <ToastContainer />
       </Router>
     </ErrorBoundary>
